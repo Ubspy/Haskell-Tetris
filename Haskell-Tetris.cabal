@@ -1,0 +1,77 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           Haskell-Tetris
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/Ubspy/Haskell-Tetris#readme>
+homepage:       https://github.com/Ubspy/Haskell-Tetris#readme
+bug-reports:    https://github.com/Ubspy/Haskell-Tetris/issues
+author:         Jack Moren
+maintainer:     jack-m@live.com
+copyright:      2021 Jack Moren
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/Ubspy/Haskell-Tetris
+
+library
+  exposed-modules:
+      DrawGrid
+      MatrixController
+      Tetris
+  other-modules:
+      Paths_Haskell_Tetris
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , blank-canvas
+    , containers
+    , random
+    , text
+    , time
+  default-language: Haskell2010
+
+executable Haskell-Tetris-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_Haskell_Tetris
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      Haskell-Tetris
+    , base >=4.7 && <5
+    , blank-canvas
+    , containers
+    , random
+    , text
+    , time
+  default-language: Haskell2010
+
+test-suite Haskell-Tetris-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_Haskell_Tetris
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      Haskell-Tetris
+    , base >=4.7 && <5
+    , blank-canvas
+    , containers
+    , random
+    , text
+    , time
+  default-language: Haskell2010

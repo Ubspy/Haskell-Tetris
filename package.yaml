@@ -1,0 +1,53 @@
+name:                Haskell-Tetris
+version:             0.1.0.0
+github:              "Ubspy/Haskell-Tetris"
+license:             BSD3
+author:              "Jack Moren"
+maintainer:          "jack-m@live.com"
+copyright:           "2021 Jack Moren"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/Ubspy/Haskell-Tetris#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- blank-canvas
+- containers
+- text
+- time
+- random
+
+library:
+  source-dirs: src
+
+executables:
+  Haskell-Tetris-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Haskell-Tetris
+
+tests:
+  Haskell-Tetris-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Haskell-Tetris
