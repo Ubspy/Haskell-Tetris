@@ -2,6 +2,7 @@ module MatrixController where
 import Data.Time.Clock
 import System.Random
 import System.IO.Unsafe
+import Data.List
 import Debug.Trace
 import Graphics.Blank
 
@@ -12,7 +13,6 @@ data GridSquare = GridSquare { pieceType :: Piece, state :: SquareState}
 instance Show GridSquare where
     show square | state square == Empty = "0"
                 | otherwise             = "1"
-
 
 type Matrix = [[GridSquare]]
 
@@ -39,3 +39,65 @@ placeLine :: Matrix -> Matrix
 placeLine boardMatrix = trace ("line: " ++ show linePieces) $ take offBoardRows boardMatrix ++ [linePieces] ++ drop (offBoardRows + 1) boardMatrix
  where offBoardRows = matrixHeight - matrixVisibleHeight
        linePieces = replicate 3 (GridSquare None Empty) ++ replicate 4 (GridSquare Line Falling) ++ replicate 3 (GridSquare None Empty)
+
+tickBoard :: Matrix -> Matrix
+tickBoard boardMatrix = do
+    let toMove = [(i, j) | (i, rows) <- zip [0..] boardMatrix, (j, square) <- zip [0..] rows, state square == Falling]
+    if not (null toMove)
+        then
+             if canMovePiece toMove boardMatrix
+                then trace "MOVE" $ movePiece toMove boardMatrix
+                else trace "SET" $ setPiece toMove boardMatrix
+        else boardMatrix
+
+-- Copy boardMatrix up to row where the piece is falling from
+movePiece :: [(Int, Int)] -> Matrix -> Matrix
+movePiece toMove boardMatrix = joinRow 0
+    where
+        joinRow row
+            | (row + 1) < matrixHeight = joinCol 0 : joinRow (row + 1)
+            | otherwise                = [joinCol 0]
+                where
+                    joinCol col
+                        | (col + 1) < matrixWidth = currentSquare : joinCol (col + 1)
+                        | otherwise               = [currentSquare]
+                            where
+                                currentSquare
+                                    | (row - 1, col) `elem` toMove                 = boardMatrix !! (row - 1) !! col
+                                    | state (boardMatrix !! row !! col) == Falling = GridSquare None Empty
+                                    | otherwise                                    = boardMatrix !! row !! col
+
+
+-- joinCol :: Int -> Int -> Matrix -> [GridSquare]
+-- joinCol row col boardMatrix
+--     | (col + 1) < matrixWidth = trace ("col: " ++ show col) $ currentSquare row col boardMatrix : joinCol (col + 1) row boardMatrix
+--     | otherwise               = trace ("NONO: " ++ show col ) $ []
+
+-- currentSquare :: Int -> Int -> Matrix -> GridSquare    
+-- currentSquare row col boardMatrix
+--     | state (boardMatrix !! row !! col) == Falling = trace (show row ++ ", " ++ show col) $ GridSquare None Empty
+--     | otherwise                      = trace (show row ++ ", " ++ show col) $ boardMatrix !! row !! col
+    -- let highestPieceRow = minimum [fst i | i <- toMove]
+    -- let lowestPieceRow  = maximum [fst i | i <- toMove]
+    -- take highestPieceRow boardMatrix ++ 
+
+
+
+setPiece :: [(Int, Int)] -> Matrix -> Matrix
+setPiece toMove boardMatrix = joinRow 0
+    where
+        joinRow row
+            | (row + 1) < matrixHeight = joinCol 0 : joinRow (row + 1)
+            | otherwise                = [joinCol 0]
+                where
+                    joinCol col
+                        | (col + 1) < matrixWidth = currentSquare : joinCol (col + 1)
+                        | otherwise               = [currentSquare]
+                            where
+                                currentSquare
+                                    | state (boardMatrix !! row !! col) == Falling = GridSquare (pieceType (boardMatrix !! row !! col)) Set
+                                    | otherwise                                    = boardMatrix !! row !! col
+
+canMovePiece :: [(Int, Int)] -> Matrix -> Bool
+canMovePiece toMove boardMatrix = trace (show boardMatrix) $ (maximum [fst i | i <- toMove]) /= (matrixHeight - 1)
+    && all (\ (row, col) -> state (boardMatrix !! row !! col) /= Set) toMove

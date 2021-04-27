@@ -35,8 +35,8 @@ drawPieces context boardMatrix = do
                   y = gridYPadding context + fromIntegral iCorrected * gridLineWidth + fromIntegral iCorrected * gridSize context
                   iCorrected = i - (matrixHeight - matrixVisibleHeight) -- not -1 here because we are indexing off of something new, we want i = 4 to go to i = 0
                   drawNextPiece
-                    | (i + 1) <  matrixVisibleHeight && (j + 1) < matrixWidth = drawPiece (i + 1) j
-                    | (i + 1) <= matrixVisibleHeight && (j + 1) < matrixWidth = drawPiece 0 (j + 1)
+                    | (i + 1) <  matrixHeight && (j + 1) < matrixWidth = drawPiece (i + 1) j
+                    | (i + 1) <= matrixHeight && (j + 1) < matrixWidth = drawPiece 0 (j + 1)
                     | otherwise                                               = return ()
 
 -- We write drawGridXLines to not take an int, then we create a partial application function
