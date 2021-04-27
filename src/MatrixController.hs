@@ -31,10 +31,6 @@ placeRandomPiece boardMatrix
     | otherwise = placeLine boardMatrix
     where rand = unsafePerformIO $ randomRIO (1, 6 :: Int) -- Bad?
 
--- drawSquares :: DeviceContext -> Canvas ()
--- drawSquares context = drawSquare 0 0 where
---     drawSquare x y = return ()
-
 placeLine :: Matrix -> Matrix
 placeLine boardMatrix = trace ("line: " ++ show linePieces) $ take offBoardRows boardMatrix ++ [linePieces] ++ drop (offBoardRows + 1) boardMatrix
  where offBoardRows = matrixHeight - matrixVisibleHeight
@@ -42,13 +38,16 @@ placeLine boardMatrix = trace ("line: " ++ show linePieces) $ take offBoardRows 
 
 tickBoard :: Matrix -> Matrix
 tickBoard boardMatrix = do
-    let toMove = [(i, j) | (i, rows) <- zip [0..] boardMatrix, (j, square) <- zip [0..] rows, state square == Falling]
+    let toMove = getFallingPieces boardMatrix
     if not (null toMove)
         then
              if canMovePiece toMove boardMatrix
                 then trace "MOVE" $ movePiece toMove boardMatrix
                 else trace "SET" $ setPiece toMove boardMatrix
         else boardMatrix
+
+getFallingPieces :: Matrix -> [(Int, Int)]
+getFallingPieces boardMatrix = [(i, j) | (i, rows) <- zip [0..] boardMatrix, (j, square) <- zip [0..] rows, state square == Falling]
 
 -- Copy boardMatrix up to row where the piece is falling from
 movePiece :: [(Int, Int)] -> Matrix -> Matrix
@@ -75,4 +74,4 @@ mapBoard boardMatrix mapFunc = joinRow 0 where
 
 canMovePiece :: [(Int, Int)] -> Matrix -> Bool
 canMovePiece toMove boardMatrix = trace (show boardMatrix) $ (maximum [fst i | i <- toMove]) /= (matrixHeight - 1)
-    && all (\ (row, col) -> state (boardMatrix !! row !! col) /= Set) toMove
+    && all (\ (row, col) -> state (boardMatrix !! (row + 1) !! col) /= Set) toMove

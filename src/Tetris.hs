@@ -38,15 +38,16 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
     unless (newState == gameState) $ updateBoard context boardMatrix
     --trace (show gameState ++ ", " ++ show framesSinceDrop) $ return ()
   threadDelay 500
-  gameLoop context newLevel newFrames newMatrix newState
+  gameLoop context newLevel newFrames newBoard newState
   where newLevel  | gameState == Drop = level + 1
                   | otherwise         = level
         newFrames | newState /= gameState = 0
                   | otherwise         = framesSinceDrop + 1
-        newMatrix | gameState == Drop = placeRandomPiece boardMatrix
+        newBoard  | gameState == Drop = placeRandomPiece boardMatrix
                   | gameState == Tick = tickBoard boardMatrix
                   | otherwise         = boardMatrix
         newState  | gameState == Drop = Playing
+                  | gameState == Tick = if null (getFallingPieces newBoard) then Drop else Playing
                   | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** (fromIntegral level - 1))) = Tick
                   | otherwise = Playing
 
