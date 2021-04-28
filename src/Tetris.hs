@@ -11,6 +11,7 @@ import Debug.Trace
 
 data GameState = Menu | Playing | Tick | Drop | Lost deriving Eq
 
+-- TODO: Remove, this is for debugging
 instance Show GameState where
   show state
         | state == Menu = "Menu"
@@ -39,6 +40,7 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
     --trace (show gameState ++ ", " ++ show framesSinceDrop) $ return ()
   threadDelay 500
   gameLoop context newLevel newFrames newBoard newState
+  -- TODO: This lookin kinda ugly
   where newLevel  | gameState == Drop = level + 1
                   | otherwise         = level
         newFrames | newState /= gameState = 0
@@ -51,10 +53,10 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
                   | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** (fromIntegral level - 1))) = Tick
                   | otherwise = Playing
 
+-- Updates the baord after a canvas redraw
 updateBoard :: DeviceContext -> Matrix -> Canvas ()
 updateBoard context boardMatrix = do
   clearRect (0, 0, width context, height context)
   drawBackground context
-  --trace ("Board:" ++ show boardMatrix) $ drawPieces context boardMatrix
   drawPieces context boardMatrix
   drawGrid context
