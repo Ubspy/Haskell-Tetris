@@ -7,6 +7,7 @@ import Control.Concurrent
 import Control.Monad
 import MatrixController
 import DrawGrid
+import Debug.Trace
 
 data GameState = Menu | Playing | Tick | Drop | Lost deriving Eq
 
@@ -29,13 +30,15 @@ startFallTime = 1.2
 -- Lamba functions in haskell are represented by \ x -> (function), so this is calling blank canvas with two arguments
 -- and a function we're writing in line with the 
 runTetris = blankCanvas 3000 { events = ["keydown"] } $ \ context -> gameLoop context 0 0 initialBoard Drop where
-  initialBoard = replicate matrixHeight (replicate matrixWidth (GridSquare None Empty) ++ [GridSquare Square Set])
+  initialBoard = replicate matrixHeight (replicate matrixWidth (GridSquare None Empty))
 
 -- Game loop function, to take care of handling the main game loop
 gameLoop :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO ()
 gameLoop context level framesSinceDrop boardMatrix gameState = do
   newBoard <- getNewBoard context level framesSinceDrop boardMatrix gameState
   newState <- getNewState context level framesSinceDrop newBoard    gameState
+
+  -- _ <- trace (show newBoard) $ return ()
 
   let newLevel = if gameState == Drop then level else level
   let newFrames = if newState /= gameState then 0 else framesSinceDrop + 1
@@ -48,7 +51,9 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
 
 getNewBoard :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO Matrix
 getNewBoard context level framesSinceDrop boardMatrix gameState
-  | gameState == Drop = do       placeRandomPiece boardMatrix
+  | gameState == Drop = do
+    clearedBoard <- clearFullRows  boardMatrix
+    trace (show clearedBoard) $ placeRandomPiece clearedBoard
   | gameState == Tick = return $ tickBoard        boardMatrix
   | otherwise         = processInput context boardMatrix
 

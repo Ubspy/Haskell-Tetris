@@ -24,7 +24,7 @@ drawPieces context boardMatrix = do
     drawPiece (matrixHeight - matrixVisibleHeight - 1) 0
     where
         drawPiece i j
-          | trace (show i ++ ", " ++ show j) $ state (boardMatrix !! i !! j)  == Empty = drawNextPiece
+          | state (boardMatrix !! i !! j)  == Empty = drawNextPiece
           | otherwise = do
             fillStyle "#aa0000"
             -- Add 1 because of the end line width, we're drawing into the grid lines but these are drawn first so it's ok
