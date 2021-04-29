@@ -8,6 +8,7 @@ import Control.Monad
 import MatrixController
 import DrawGrid
 import Debug.Trace
+import System.IO.Unsafe
 
 data GameState = Menu | Playing | Tick | Drop | Lost deriving Eq
 
@@ -30,7 +31,7 @@ startFallTime = 1.2
 -- Lamba functions in haskell are represented by \ x -> (function), so this is calling blank canvas with two arguments
 -- and a function we're writing in line with the 
 runTetris = blankCanvas 3000 { events = ["keydown"] } $ \ context -> gameLoop context 0 0 initialBoard Drop where
-  initialBoard = replicate matrixHeight (replicate matrixWidth (GridSquare None Empty))
+  initialBoard = replicate matrixHeight (replicate matrixWidth (GridSquare None Empty) ++ [GridSquare Square Set])
 
 -- Game loop function, to take care of handling the main game loop
 gameLoop :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO ()
@@ -41,17 +42,34 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
   threadDelay 500
   gameLoop context newLevel newFrames newBoard newState
   -- TODO: This lookin kinda ugly
-  where newLevel  | gameState == Drop = level + 1
+  where newLevel  | gameState == Drop = level
                   | otherwise         = level
         newFrames | newState /= gameState = 0
                   | otherwise         = framesSinceDrop + 1
-        newBoard  | gameState == Drop = placeRandomPiece boardMatrix
-                  | gameState == Tick = tickBoard boardMatrix
-                  | otherwise         = boardMatrix
+        newBoard = getNewBoard context level framesSinceDrop boardMatrix gameState
         newState  | gameState == Drop = Playing
                   | gameState == Tick = if null (getFallingPieces newBoard) then Drop else Playing
                   | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** (fromIntegral level - 1))) = Tick
                   | otherwise = Playing
+
+getNewBoard :: DeviceContext -> Int -> Int -> Matrix -> GameState -> Matrix
+getNewBoard context level framesSinceDrop boardMatrix gameState
+  | gameState == Drop = placeRandomPiece boardMatrix
+  | gameState == Tick = tickBoard        boardMatrix
+  | otherwise         = unsafePerformIO (processInput context boardMatrix)
+
+processInput :: DeviceContext -> Matrix -> IO Matrix 
+processInput context boardMatrix = do
+  -- Gets all events that haven't been processed
+  eventList <- flush context -- I had to read the source code of blank-canvas to find this, but I'm proud that I found it
+  if (not . null) eventList
+    then return (processEvent boardMatrix eventList 0)
+    else return boardMatrix
+      where processEvent boardMatrix eventList index
+              | length eventList > (index + 1) = do
+                let newBoard = controlBoard (eWhich (eventList !! index)) newBoard
+                processEvent boardMatrix eventList (index + 1)
+              | otherwise = controlBoard (eWhich (eventList !! index)) boardMatrix
 
 -- Updates the baord after a canvas redraw
 updateBoard :: DeviceContext -> Matrix -> Canvas ()
@@ -59,4 +77,4 @@ updateBoard context boardMatrix = do
   clearRect (0, 0, width context, height context)
   drawBackground context
   drawPieces context boardMatrix
-  drawGrid context
+  trace (show boardMatrix) $ drawGrid context

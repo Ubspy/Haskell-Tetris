@@ -19,6 +19,11 @@ instance Show GridSquare where
     show square | state square == Empty = "0"
                 | otherwise             = "1"
 
+instance Show SquareState where
+    show state  | state == Set = "Set"
+                | state == Falling = "Falling"
+                | otherwise = "Bruh"
+
 -- Matrix type declaration
 type Matrix = [[GridSquare]]
 
@@ -59,9 +64,18 @@ tickBoard boardMatrix = do
     if not (null toMove)
         then
              if canFallPiece toMove boardMatrix
-                then trace "MOVE" $ movePiece toMove boardMatrix
-                else trace "SET" $ setPiece toMove boardMatrix
+                then movePieceDown   toMove boardMatrix
+                else setFallingPiece toMove boardMatrix
         else error "This is bad"
+
+controlBoard :: Maybe Int -> Matrix -> Matrix
+controlBoard keyCode boardMatrix = do
+    let toMove = getFallingPieces boardMatrix
+    _ <- trace (show (canMovePieceRight toMove boardMatrix)) $ return [[]]
+    case keyCode of
+        Just 37 -> if canMovePieceLeft  toMove boardMatrix then movePieceLeft  toMove boardMatrix else boardMatrix
+        Just 39 -> if canMovePieceRight toMove boardMatrix then movePieceRight toMove boardMatrix else boardMatrix
+        _       -> boardMatrix
 
 -- Get the location of all the falling pieces
 -- Get a list of tuples with a row and its index, and then from that we get the individual elements with their index in the column
@@ -70,19 +84,39 @@ getFallingPieces :: Matrix -> [(Int, Int)]
 getFallingPieces boardMatrix = [(i, j) | (i, rows) <- zip [0..] boardMatrix, (j, square) <- zip [0..] rows, state square == Falling]
 
 -- Copy boardMatrix but move the falling pieces down
-movePiece :: [(Int, Int)] -> Matrix -> Matrix
-movePiece toMove boardMatrix = mapBoard boardMatrix moveSquare where
+movePieceDown :: [(Int, Int)] -> Matrix -> Matrix
+movePieceDown toMove boardMatrix = mapBoard boardMatrix moveSquare where
     moveSquare (row, col)
-        -- If the square above the current one is falling, we then set the current square to that one
+        -- If the square above the current one is moving, we then set the current square to that one
         | (row - 1, col) `elem` toMove                 = boardMatrix !! (row - 1) !! col
         -- If the state is currently falling, then we will set the current one to empty since the square will have fallen
         | state (boardMatrix !! row !! col) == Falling = GridSquare None Empty
         -- Otherwise we just copy it over
         | otherwise                                    = boardMatrix !! row !! col
 
+movePieceLeft :: [(Int, Int)] -> Matrix -> Matrix
+movePieceLeft toMove boardMatrix = mapBoard boardMatrix moveSquare where
+    moveSquare (row, col)
+        -- If the square to the right is moving, we set the current square to that one
+        | (row, col + 1) `elem` toMove                 = boardMatrix !! row !! (col + 1)
+        -- Otherwise, if it's currently falling we'll set it to empty
+        | state (boardMatrix !! row !! col) == Falling = GridSquare None Empty
+        -- Lastly, if it's anything else, we just copy it over
+        | otherwise                                    = boardMatrix !! row !! col
+
+movePieceRight :: [(Int, Int)] -> Matrix -> Matrix
+movePieceRight toMove boardMatrix = mapBoard boardMatrix moveSquare where
+    moveSquare (row, col)
+        -- If the square to the left is wanting to be moved then we set that square to the current one (so we move it)
+        | (row, col - 1) `elem` toMove                 = boardMatrix !! row !! (col - 1)
+        -- Next, if the square is set to falling, we will have moved it, so we set it to empty
+        | state (boardMatrix !! row !! col) == Falling = GridSquare None Empty
+        -- Otherwise just copy the square over
+        | otherwise                                    = boardMatrix !! row !! col
+
 -- Copy board matrix but set falling pieces to set pieces
-setPiece :: [(Int, Int)] -> Matrix -> Matrix
-setPiece toMove boardMatrix = mapBoard boardMatrix setSquare where
+setFallingPiece :: [(Int, Int)] -> Matrix -> Matrix
+setFallingPiece toMove boardMatrix = mapBoard boardMatrix setSquare where
     setSquare (row, col)
         | state (boardMatrix !! row !! col) == Falling = GridSquare (pieceType (boardMatrix !! row !! col)) Set
         | otherwise                                    = boardMatrix !! row !! col
@@ -101,5 +135,13 @@ mapBoard boardMatrix mapFunc = joinRow 0 where
 
 -- Checks if a piece can fall by looking at the pieces below it
 canFallPiece :: [(Int, Int)] -> Matrix -> Bool
-canFallPiece toMove boardMatrix = trace (show boardMatrix) $ (maximum [fst i | i <- toMove]) /= (matrixHeight - 1)
-    && all (\ (row, col) -> state (boardMatrix !! (row + 1) !! col) /= Set) toMove
+canFallPiece toMove boardMatrix = (maximum [fst i | i <- toMove]) /= (matrixHeight - 1) -- First check to see if it's at the bottom
+    && all (\ (row, col) -> state (boardMatrix !! (row + 1) !! col) /= Set) toMove -- Then see if it collides with another piece
+
+canMovePieceLeft :: [(Int, Int)] -> Matrix -> Bool
+canMovePieceLeft toMove boardMatrix = (minimum [snd i | i <- toMove]) /= 0
+    && all (\ (row, col) -> state (boardMatrix !! row !! (col - 1)) /= Set) toMove
+
+canMovePieceRight :: [(Int, Int)] -> Matrix -> Bool
+canMovePieceRight toMove boardMatrix = (maximum [snd i | i <- toMove]) /= 9
+    && all (\ (row, col) -> trace (show row ++ ", " ++ show col ++ ", " ++ show (state (boardMatrix !! row !! (col + 1)))) $ state (boardMatrix !! row !! (col + 1)) /= Set) toMove
