@@ -7,8 +7,6 @@ import Control.Concurrent
 import Control.Monad
 import MatrixController
 import DrawGrid
-import Debug.Trace
-import System.IO.Unsafe
 
 data GameState = Menu | Playing | Tick | Drop | Lost deriving Eq
 
@@ -36,27 +34,30 @@ runTetris = blankCanvas 3000 { events = ["keydown"] } $ \ context -> gameLoop co
 -- Game loop function, to take care of handling the main game loop
 gameLoop :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO ()
 gameLoop context level framesSinceDrop boardMatrix gameState = do
+  newBoard <- getNewBoard context level framesSinceDrop boardMatrix gameState
+  newState <- getNewState context level framesSinceDrop newBoard    gameState
+
+  let newLevel = if gameState == Drop then level else level
+  let newFrames = if newState /= gameState then 0 else framesSinceDrop + 1
+
   send context $ do
     unless (newState == gameState) $ updateBoard context boardMatrix
-    --trace (show gameState ++ ", " ++ show framesSinceDrop) $ return ()
+    
   threadDelay 500
   gameLoop context newLevel newFrames newBoard newState
-  -- TODO: This lookin kinda ugly
-  where newLevel  | gameState == Drop = level
-                  | otherwise         = level
-        newFrames | newState /= gameState = 0
-                  | otherwise         = framesSinceDrop + 1
-        newBoard = getNewBoard context level framesSinceDrop boardMatrix gameState
-        newState  | gameState == Drop = Playing
-                  | gameState == Tick = if null (getFallingPieces newBoard) then Drop else Playing
-                  | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** (fromIntegral level - 1))) = Tick
-                  | otherwise = Playing
 
-getNewBoard :: DeviceContext -> Int -> Int -> Matrix -> GameState -> Matrix
+getNewBoard :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO Matrix
 getNewBoard context level framesSinceDrop boardMatrix gameState
-  | gameState == Drop = placeRandomPiece boardMatrix
-  | gameState == Tick = tickBoard        boardMatrix
-  | otherwise         = unsafePerformIO (processInput context boardMatrix)
+  | gameState == Drop = do       placeRandomPiece boardMatrix
+  | gameState == Tick = return $ tickBoard        boardMatrix
+  | otherwise         = processInput context boardMatrix
+
+getNewState :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO GameState
+getNewState context level framesSinceDrop boardMatrix gameState
+  | gameState == Drop = return Playing
+  | gameState == Tick = return $ if null (getFallingPieces boardMatrix) then Drop else Playing
+  | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** (fromIntegral level - 1))) = return Tick
+  | otherwise = return Playing
 
 processInput :: DeviceContext -> Matrix -> IO Matrix 
 processInput context boardMatrix = do
@@ -77,4 +78,4 @@ updateBoard context boardMatrix = do
   clearRect (0, 0, width context, height context)
   drawBackground context
   drawPieces context boardMatrix
-  trace (show boardMatrix) $ drawGrid context
+  drawGrid context

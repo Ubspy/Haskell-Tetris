@@ -1,7 +1,6 @@
 module MatrixController where
 import Data.Time.Clock
 import System.Random
-import System.IO.Unsafe
 import Data.List
 import Debug.Trace
 import Graphics.Blank
@@ -39,16 +38,12 @@ matrixVisibleHeight :: Int
 matrixVisibleHeight = 20
 
 -- Takes the board and puts a random piece on it using place functions
-placeRandomPiece :: Matrix -> Matrix
-placeRandomPiece boardMatrix
-    | rand == 1 = placeLine boardMatrix
-    | otherwise = placeLine boardMatrix
-    -- This is bad, unsafePerformIO is bad, don't follow my example
-    -- I had this to where it would return an IO Matrix where you need to splat the matrix to the screen and then continue messing with the matrix
-    -- Problem is that IO and Canvas are not the same type, and there is no easy conversion between them
-    -- They essentially act as the same thing, but since all the actions are using IO, the only way to do this is by some black magic with JS
-    -- Or use unsafePerformIO just for this random number
-    where rand = unsafePerformIO $ randomRIO (1, 6 :: Int) 
+placeRandomPiece :: Matrix -> IO Matrix
+placeRandomPiece boardMatrix = do
+    rand <- randomRIO (1, 6 :: Int) 
+    case rand of
+        1 -> return $ placeLine boardMatrix
+        _ -> return $ placeLine boardMatrix
 
 -- This places a line at the top of the board
 placeLine :: Matrix -> Matrix
@@ -71,7 +66,6 @@ tickBoard boardMatrix = do
 controlBoard :: Maybe Int -> Matrix -> Matrix
 controlBoard keyCode boardMatrix = do
     let toMove = getFallingPieces boardMatrix
-    _ <- trace (show (canMovePieceRight toMove boardMatrix)) $ return [[]]
     case keyCode of
         Just 37 -> if canMovePieceLeft  toMove boardMatrix then movePieceLeft  toMove boardMatrix else boardMatrix
         Just 39 -> if canMovePieceRight toMove boardMatrix then movePieceRight toMove boardMatrix else boardMatrix
@@ -144,4 +138,4 @@ canMovePieceLeft toMove boardMatrix = (minimum [snd i | i <- toMove]) /= 0
 
 canMovePieceRight :: [(Int, Int)] -> Matrix -> Bool
 canMovePieceRight toMove boardMatrix = (maximum [snd i | i <- toMove]) /= 9
-    && all (\ (row, col) -> trace (show row ++ ", " ++ show col ++ ", " ++ show (state (boardMatrix !! row !! (col + 1)))) $ state (boardMatrix !! row !! (col + 1)) /= Set) toMove
+    && all (\ (row, col) -> state (boardMatrix !! row !! (col + 1)) /= Set) toMove

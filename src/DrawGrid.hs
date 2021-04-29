@@ -24,7 +24,7 @@ drawPieces context boardMatrix = do
     drawPiece (matrixHeight - matrixVisibleHeight - 1) 0
     where
         drawPiece i j
-          | state (boardMatrix !! i !! j)  == Empty = drawNextPiece
+          | trace (show i ++ ", " ++ show j) $ state (boardMatrix !! i !! j)  == Empty = drawNextPiece
           | otherwise = do
             fillStyle "#aa0000"
             -- Add 1 because of the end line width, we're drawing into the grid lines but these are drawn first so it's ok
@@ -35,8 +35,8 @@ drawPieces context boardMatrix = do
                   y = gridYPadding context + fromIntegral iCorrected * gridLineWidth + fromIntegral iCorrected * gridSize context
                   iCorrected = i - (matrixHeight - matrixVisibleHeight) -- not -1 here because we are indexing off of something new, we want i = 4 to go to i = 0
                   drawNextPiece
-                    | (i + 1) <  matrixHeight && (j + 1) < matrixWidth = drawPiece (i + 1) j
-                    | (i + 1) <= matrixHeight && (j + 1) < matrixWidth = drawPiece 0 (j + 1)
+                    | (i + 1) < matrixHeight && j       < matrixWidth = drawPiece (i + 1) j       -- We're checking if the cols are in bounds and if the next row will be in bounds
+                    | i       < matrixHeight && (j + 1) < matrixWidth = drawPiece 0       (j + 1) -- We're checking if the rows are in bounds and if the next col will be in bounds (this is under the assumption the next row is out of bounds)
                     | otherwise                                               = return ()
 
 -- We write drawGridXLines to not take an int, then we create a partial application function
