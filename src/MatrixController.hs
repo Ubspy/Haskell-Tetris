@@ -37,13 +37,23 @@ matrixHeight = 24
 matrixVisibleHeight :: Int 
 matrixVisibleHeight = 20
 
+clearFullRows :: Matrix -> IO Matrix
+clearFullRows boardMatrix = do
+    return $ checkRow (matrixHeight - 1) boardMatrix
+        where checkRow row currentMatrix
+                | (row - 1) < 0 = currentMatrix
+                | all (\ square -> state square == Set) (currentMatrix !! row) = do
+                    let clearedMatrix = replicate matrixWidth (GridSquare None Empty) : (take row boardMatrix ++ drop (row + 1) boardMatrix) -- Replace the cleared row with a blank row at the top
+                    checkRow row clearedMatrix -- Check this row again incase now the new row in this place needs to be cleared
+                | otherwise = checkRow (row - 1) currentMatrix
+
 -- Takes the board and puts a random piece on it using place functions
 placeRandomPiece :: Matrix -> IO Matrix
 placeRandomPiece boardMatrix = do
     rand <- randomRIO (1, 6 :: Int) 
     case rand of
         1 -> return $ placeLine boardMatrix
-        _ -> return $ placeLine boardMatrix
+        _ -> return $ placeSquare boardMatrix
 
 -- This places a line at the top of the board
 placeLine :: Matrix -> Matrix
@@ -51,6 +61,12 @@ placeLine :: Matrix -> Matrix
 placeLine boardMatrix = take offBoardRows boardMatrix ++ [linePieces] ++ drop (offBoardRows + 1) boardMatrix
  where offBoardRows = matrixHeight - matrixVisibleHeight
        linePieces = replicate 3 (GridSquare None Empty) ++ replicate 4 (GridSquare Line Falling) ++ replicate 3 (GridSquare None Empty)
+       -- TODO: This clears top squares, kinda bad, this needs to be fixed
+
+placeSquare :: Matrix -> Matrix
+placeSquare boardMatrix = take offBoardRows boardMatrix ++ squarePieces ++ drop (offBoardRows + 2) boardMatrix -- Square piece is two long 
+    where   offBoardRows = matrixHeight - matrixVisibleHeight
+            squarePieces = replicate 2 $ replicate 4 (GridSquare None Empty) ++ replicate 2 (GridSquare Square Falling) ++ replicate 4 (GridSquare None Empty)
 
 -- This will change the board depending on what kind of tick it is, if the piece can fall, we make it fall, if not we lock it in place
 tickBoard :: Matrix -> Matrix
