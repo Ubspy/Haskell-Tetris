@@ -38,38 +38,37 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
   newBoard <- getNewBoard context level framesSinceDrop boardMatrix gameState
   newState <- getNewState context level framesSinceDrop newBoard    gameState
 
-  -- _ <- trace (show newBoard) $ return ()
-
-  let newLevel = if gameState == Drop then level else level
+  let newLevel = level -- if gameState == Drop then level else level
   let newFrames = if newState /= gameState then 0 else framesSinceDrop + 1
 
   send context $ do
     unless (newState == gameState) $ updateBoard context boardMatrix
     
-  threadDelay 500
+  threadDelay (1 * 1000)
   gameLoop context newLevel newFrames newBoard newState
 
 getNewBoard :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO Matrix
 getNewBoard context level framesSinceDrop boardMatrix gameState
   | gameState == Drop = do
     clearedBoard <- clearFullRows  boardMatrix
-    trace (show clearedBoard) $ placeRandomPiece clearedBoard
-  | gameState == Tick = return $ tickBoard        boardMatrix
+    placeRandomPiece clearedBoard
+  | gameState == Tick = return $ tickBoard boardMatrix
   | otherwise         = processInput context boardMatrix
 
 getNewState :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO GameState
-getNewState context level framesSinceDrop boardMatrix gameState
-  | gameState == Drop = return Playing
-  | gameState == Tick = return $ if null (getFallingPieces boardMatrix) then Drop else Playing
-  | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** (fromIntegral level - 1))) = return Tick
-  | otherwise = return Playing
+getNewState context level framesSinceDrop boardMatrix gameState = do
+  bruh where bruh
+              | gameState == Drop = return Playing
+              | gameState == Tick = return $ if null (getFallingPieces boardMatrix) then Drop else Playing
+              | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** fromIntegral level)) = return Tick
+              | otherwise = return Playing
 
 processInput :: DeviceContext -> Matrix -> IO Matrix 
 processInput context boardMatrix = do
   -- Gets all events that haven't been processed
   eventList <- flush context -- I had to read the source code of blank-canvas to find this, but I'm proud that I found it
   if (not . null) eventList
-    then return (processEvent boardMatrix eventList 0)
+    then return $ processEvent boardMatrix eventList 0
     else return boardMatrix
       where processEvent boardMatrix eventList index
               | length eventList > (index + 1) = do

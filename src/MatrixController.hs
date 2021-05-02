@@ -43,7 +43,7 @@ clearFullRows boardMatrix = do
         where checkRow row currentMatrix
                 | (row - 1) < 0 = currentMatrix
                 | all (\ square -> state square == Set) (currentMatrix !! row) = do
-                    let clearedMatrix = replicate matrixWidth (GridSquare None Empty) : (take row boardMatrix ++ drop (row + 1) boardMatrix) -- Replace the cleared row with a blank row at the top
+                    let clearedMatrix = replicate matrixWidth (GridSquare None Empty) : (take row currentMatrix ++ drop (row + 1) currentMatrix) -- Replace the cleared row with a blank row at the top
                     checkRow row clearedMatrix -- Check this row again incase now the new row in this place needs to be cleared
                 | otherwise = checkRow (row - 1) currentMatrix
 
@@ -74,7 +74,7 @@ tickBoard boardMatrix = do
     let toMove = getFallingPieces boardMatrix
     if not (null toMove)
         then
-             if canFallPiece toMove boardMatrix
+            if canFallPiece toMove boardMatrix
                 then movePieceDown   toMove boardMatrix
                 else setFallingPiece toMove boardMatrix
         else error "This is bad"
@@ -85,6 +85,7 @@ controlBoard keyCode boardMatrix = do
     case keyCode of
         Just 37 -> if canMovePieceLeft  toMove boardMatrix then movePieceLeft  toMove boardMatrix else boardMatrix
         Just 39 -> if canMovePieceRight toMove boardMatrix then movePieceRight toMove boardMatrix else boardMatrix
+        Just 69 -> rotatePiece toMove boardMatrix
         _       -> boardMatrix
 
 -- Get the location of all the falling pieces
@@ -123,6 +124,33 @@ movePieceRight toMove boardMatrix = mapBoard boardMatrix moveSquare where
         | state (boardMatrix !! row !! col) == Falling = GridSquare None Empty
         -- Otherwise just copy the square over
         | otherwise                                    = boardMatrix !! row !! col
+
+rotatePiece :: [(Int, Int)] -> Matrix -> Matrix
+rotatePiece toMove boardMatrix = do
+    let newSquares = getRotatedSquares toMove
+    -- _ <- trace (show newSquares) $ return [[]]
+    let oldSquare  = boardMatrix !! (fst . head) toMove !! (snd . head) toMove
+    case canRotatePiece newSquares boardMatrix of
+        True -> mapBoard boardMatrix rotateSquare where
+            rotateSquare (row, col)
+                | (row, col) `elem` newSquares                 = oldSquare
+                | state (boardMatrix !! row !! col) == Falling = GridSquare None Empty
+                | otherwise = boardMatrix !! row !! col
+        False -> boardMatrix
+
+canRotatePiece :: [(Int, Int)] -> Matrix -> Bool 
+canRotatePiece newSquares boardMatrix = all (\ (row, col) -> state (boardMatrix !! row !! col) /= Set) newSquares
+
+getRotatedSquares :: [(Int, Int)] -> [(Int, Int)]
+getRotatedSquares toMove = do
+    let maxYCoord = maximum [fst i | i <- toMove] + 1
+    let minYCoord = minimum [fst i | i <- toMove]
+    let maxXCoord = maximum [snd i | i <- toMove] + 1
+    let minXCoord = minimum [snd i | i <- toMove]
+    let tmp = fromIntegral (maxYCoord - minYCoord) / 2
+    let center = (fromIntegral (maxYCoord - minYCoord) / 2 + fromIntegral minYCoord, fromIntegral (maxXCoord - minXCoord) / 2 + fromIntegral minXCoord)
+    --map (\ square -> (uncurry (-) square + snd center, uncurry (+) square - fst center)) toMove
+    map (\ square -> (floor (snd center) - snd square + floor (fst center), fst square - floor (fst center) + floor (snd center))) toMove
 
 -- Copy board matrix but set falling pieces to set pieces
 setFallingPiece :: [(Int, Int)] -> Matrix -> Matrix
