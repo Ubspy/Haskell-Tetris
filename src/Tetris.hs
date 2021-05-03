@@ -68,13 +68,17 @@ processInput context boardMatrix = do
   -- Gets all events that haven't been processed
   eventList <- flush context -- I had to read the source code of blank-canvas to find this, but I'm proud that I found it
   if (not . null) eventList
-    then return $ processEvent boardMatrix eventList 0
+    then processEvent boardMatrix eventList 0
     else return boardMatrix
       where processEvent boardMatrix eventList index
               | length eventList > (index + 1) = do
-                let newBoard = controlBoard (eWhich (eventList !! index)) newBoard
-                processEvent boardMatrix eventList (index + 1)
-              | otherwise = controlBoard (eWhich (eventList !! index)) boardMatrix
+                let newBoard = controlBoard (eWhich (eventList !! index)) boardMatrix
+                when (snd newBoard) $ send context $ updateBoard context (fst newBoard)
+                processEvent (fst newBoard) eventList (index + 1)
+              | otherwise = do
+                  let newBoard = controlBoard (eWhich (eventList !! index)) boardMatrix
+                  when (snd newBoard) $ send context $ updateBoard context (fst newBoard)
+                  return $ fst newBoard
 
 -- Updates the baord after a canvas redraw
 updateBoard :: DeviceContext -> Matrix -> Canvas ()

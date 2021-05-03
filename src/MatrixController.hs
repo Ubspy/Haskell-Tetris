@@ -118,14 +118,14 @@ tickBoard boardMatrix = do
                 else setFallingPiece toMove boardMatrix
         else error "This is bad"
 
-controlBoard :: Maybe Int -> Matrix -> Matrix
+controlBoard :: Maybe Int -> Matrix -> (Matrix, Bool)
 controlBoard keyCode boardMatrix = do
     let toMove = getFallingPieces boardMatrix
     case keyCode of
-        Just 37 -> if canMovePieceLeft  toMove boardMatrix then movePieceLeft  toMove boardMatrix else boardMatrix
-        Just 39 -> if canMovePieceRight toMove boardMatrix then movePieceRight toMove boardMatrix else boardMatrix
-        Just 69 -> rotatePiece toMove boardMatrix
-        _       -> boardMatrix
+        Just 37 -> (if canMovePieceLeft  toMove boardMatrix then movePieceLeft  toMove boardMatrix else boardMatrix, True)
+        Just 39 -> (if canMovePieceRight toMove boardMatrix then movePieceRight toMove boardMatrix else boardMatrix, True)
+        Just 69 -> (rotatePiece toMove boardMatrix, True)
+        _       -> (boardMatrix, False)
 
 -- Get the location of all the falling pieces
 -- Get a list of tuples with a row and its index, and then from that we get the individual elements with their index in the column
