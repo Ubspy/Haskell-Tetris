@@ -169,16 +169,18 @@ rotatePiece :: [(Int, Int)] -> Matrix -> Matrix
 rotatePiece toMove boardMatrix = do
     -- Gets the new squares from the getRotated squares function
     let newSquares = getRotatedSquares toMove
-    -- 
+    -- Gets the piece type from one of the old squares before any rotation
     let oldSquare  = boardMatrix !! (fst . head) toMove !! (snd . head) toMove
     case canRotatePiece newSquares boardMatrix of
+        -- If we can rotate the piece, then we map the board based off of the rotation algorithm
         True -> mapBoard boardMatrix rotateSquare where
             rotateSquare (row, col)
-                | (row, col) `elem` newSquares                 = oldSquare
-                | state (boardMatrix !! row !! col) == Falling = GridSquare None Empty
-                | otherwise = boardMatrix !! row !! col
+                | (row, col) `elem` newSquares                 = oldSquare             -- If it's where the new rotation will be, we set it to the square
+                | state (boardMatrix !! row !! col) == Falling = GridSquare None Empty -- If it's falling, we set it to empty, since that's an old piece we would be placing over
+                | otherwise = boardMatrix !! row !! col                                -- Otherwise just copy the board
         False -> boardMatrix
 
+-- TODO: Make this more sophisticated to prevent crashing
 canRotatePiece :: [(Int, Int)] -> Matrix -> Bool 
 canRotatePiece newSquares boardMatrix = all (\ (row, col) -> state (boardMatrix !! row !! col) /= Set) newSquares
 
@@ -190,7 +192,6 @@ getRotatedSquares toMove = do
     let minXCoord = minimum [snd i | i <- toMove]
     let tmp = fromIntegral (maxYCoord - minYCoord) / 2
     let center = (fromIntegral (maxYCoord - minYCoord) / 2 + fromIntegral minYCoord, fromIntegral (maxXCoord - minXCoord) / 2 + fromIntegral minXCoord)
-    --map (\ square -> (uncurry (-) square + snd center, uncurry (+) square - fst center)) toMove
     map (\ square -> (floor (snd center) - snd square + floor (fst center), fst square - floor (fst center) + floor (snd center))) toMove
 
 -- Copy board matrix but set falling pieces to set pieces
@@ -218,9 +219,11 @@ canFallPiece toMove boardMatrix = (maximum [fst i | i <- toMove]) /= (matrixHeig
     && all (\ (row, col) -> state (boardMatrix !! (row + 1) !! col) /= Set) toMove -- Then see if it collides with another piece
 
 canMovePieceLeft :: [(Int, Int)] -> Matrix -> Bool
-canMovePieceLeft toMove boardMatrix = (minimum [snd i | i <- toMove]) /= 0
+canMovePieceLeft toMove boardMatrix = (minimum [snd i | i <- toMove]) /= 0 -- Check to make sure we're not going OOB
+    -- Check if all pieces to the left are free
     && all (\ (row, col) -> state (boardMatrix !! row !! (col - 1)) /= Set) toMove
 
 canMovePieceRight :: [(Int, Int)] -> Matrix -> Bool
-canMovePieceRight toMove boardMatrix = (maximum [snd i | i <- toMove]) /= 9
+canMovePieceRight toMove boardMatrix = (maximum [snd i | i <- toMove]) /= 9 -- Check to make sure we're not going OOB
+    -- Check if all pieces to the right are free
     && all (\ (row, col) -> state (boardMatrix !! row !! (col + 1)) /= Set) toMove
