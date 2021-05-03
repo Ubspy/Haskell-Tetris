@@ -71,7 +71,7 @@ drawGridXLines context = drawGridXLine 0 where
     where
         x = gridXPadding context + fromIntegral i * gridSize context + fromIntegral i * gridLineWidth
         y = gridYPadding context
-        dy = 20 * gridSize context + 20 * gridLineWidth
+        dy = fromIntegral matrixVisibleHeight * gridSize context + fromIntegral matrixVisibleHeight * gridLineWidth -- Account for both the grid squares you were drawing and also the lines in between
 
 drawGridYLines :: DeviceContext -> Canvas ()
 drawGridYLines context = drawGridYLine 0 where
@@ -80,18 +80,22 @@ drawGridYLines context = drawGridYLine 0 where
     moveTo (x, y)
     lineTo (x + dx, y)
     stroke()
-    when (i < 20) $ drawGridYLine (i + 1)
+    when (i < 20) $ drawGridYLine (i + 1) -- Draw the next line as long as i is less than 20
     where
       x = gridXPadding context
-      dx = 10 * gridSize context + 10 * gridLineWidth
+      dx = fromIntegral matrixWidth * gridSize context + fromIntegral matrixWidth * gridLineWidth -- Same deal here 
       y = gridYPadding context + fromIntegral i * gridSize context + fromIntegral i * gridLineWidth
 
 
 gridXPadding :: DeviceContext -> Double
-gridXPadding context = (width context - gridSize context * 10 - gridLineWidth * 11) / 2
+-- Get get the padding by subtracting the space the grid takes up from the width
+-- We add 1 for the line width since we need an extra line to close off the grid
+gridXPadding context = (width context - gridSize context * fromIntegral matrixWidth - gridLineWidth * (fromIntegral matrixWidth + 1)) / 2
 
 gridYPadding :: DeviceContext -> Double 
-gridYPadding context = (height context - gridSize context * 20 - gridLineWidth * 21) / 2
+-- Get get the padding by subtracting the space the grid takes up from the height
+-- We add 1 for the line width since we need an extra line to close off the grid
+gridYPadding context = (height context - gridSize context * fromIntegral matrixVisibleHeight - gridLineWidth * (fromIntegral matrixVisibleHeight + 1)) / 2
 
 -- Get the size of the grid by calculating the highest size we can have with at least 60 padding in the y axis
 gridSize :: DeviceContext -> Double 

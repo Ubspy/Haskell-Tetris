@@ -164,10 +164,12 @@ movePieceRight toMove boardMatrix = mapBoard boardMatrix moveSquare where
         -- Otherwise just copy the square over
         | otherwise                                    = boardMatrix !! row !! col
 
+-- TODO: Rotating will continually move the piece down, what would be idea is if you stored the center for a piece so it doesn't recalculate it to be at the bottom every time
 rotatePiece :: [(Int, Int)] -> Matrix -> Matrix
 rotatePiece toMove boardMatrix = do
+    -- Gets the new squares from the getRotated squares function
     let newSquares = getRotatedSquares toMove
-    -- _ <- trace (show newSquares) $ return [[]]
+    -- 
     let oldSquare  = boardMatrix !! (fst . head) toMove !! (snd . head) toMove
     case canRotatePiece newSquares boardMatrix of
         True -> mapBoard boardMatrix rotateSquare where
