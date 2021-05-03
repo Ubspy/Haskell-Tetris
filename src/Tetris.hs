@@ -44,7 +44,7 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
   send context $ do
     unless (newState == gameState) $ updateBoard context boardMatrix
     
-  threadDelay (1 * 1000)
+  threadDelay (20 * 1000)
   gameLoop context newLevel newFrames newBoard newState
 
 getNewBoard :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO Matrix
