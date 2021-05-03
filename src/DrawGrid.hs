@@ -4,6 +4,7 @@ module DrawGrid where
 import Graphics.Blank
 import Control.Monad
 import MatrixController
+import Data.Text
 import Debug.Trace
 
 drawBackground :: DeviceContext -> Canvas ()
@@ -15,33 +16,47 @@ drawBackground context = do
   stroke ()
 
 drawGrid :: DeviceContext -> Canvas ()
-drawGrid context = do
+drawGrid context = do -- Draw the lines in the X direction and the Y direction
   drawGridXLines context
   drawGridYLines context
 
+
 drawPieces :: DeviceContext -> Matrix -> Canvas ()
 drawPieces context boardMatrix = do
-    trace (show boardMatrix) $
-      drawPiece (matrixHeight - matrixVisibleHeight - 1) 0
-        where
-          drawPiece i j
-            | state (boardMatrix !! i !! j)  == Empty = drawNextPiece
-            | otherwise = do
-              fillStyle "#aa0000"
-              -- trace (show (i + 1 < matrixHeight) ++ ", " ++ show (j < matrixWidth) ++ 
-              --   "\n" ++ show (i < matrixHeight) ++ ", " ++ show ((j+1) < matrixWidth) ++ 
-              --   "\n" ++ show i ++ ", " ++ show j) 
-              -- Add 1 because of the end line width, we're drawing into the grid lines but these are drawn first so it's ok
-              fillRect (x, y, gridSize context + 1, gridSize context + 1)
-              drawNextPiece
-              -- Extra gridLineWidth is because we're drawing from after the grid line
-              where x = gridXPadding context + fromIntegral j          * gridLineWidth + fromIntegral j          * gridSize context
-                    y = gridYPadding context + fromIntegral iCorrected * gridLineWidth + fromIntegral iCorrected * gridSize context
-                    iCorrected = i - (matrixHeight - matrixVisibleHeight) -- not -1 here because we are indexing off of something new, we want i = 4 to go to i = 0
-                    drawNextPiece
-                      | (i + 1) < matrixHeight && j       < matrixWidth = drawPiece (i + 1) j       -- We're checking if the cols are in bounds and if the next row will be in bounds
-                      | i       < matrixHeight && (j + 1) < matrixWidth = drawPiece 0       (j + 1) -- We're checking if the rows are in bounds and if the next col will be in bounds (this is under the assumption the next row is out of bounds)
-                      | otherwise                                       = return ()
+    drawPiece (matrixHeight - matrixVisibleHeight - 1) 0
+      where
+        drawPiece i j
+          | state (boardMatrix !! i !! j)  == Empty = drawNextPiece
+          | otherwise = do
+            -- Set the color of the drawn piece based off of which piece it is
+            let colorStyle = case pieceType (boardMatrix !! i !! j) of
+                    Line    -> "rgba(51,  204, 255"
+                    Square  -> "rgba(255, 255, 0"
+                    T       -> "rgba(153, 0,   204"
+                    OrangeL -> "rgba(255, 153, 0"
+                    BlueL   -> "rgba(0,   51,  204"
+                    RedZ    -> "rgba(255, 26,  26"
+                    GreenZ  -> "rgba(51,  204, 51"
+
+            -- Set the opacity
+            let alphaStyle = case state (boardMatrix !! i !! j) of
+                    Shadow -> ", 50)"
+                    _      -> ", 255)"
+
+            -- Set the fill style in HTML canvas
+            fillStyle $ pack (colorStyle ++ alphaStyle)
+
+            -- Add 1 because of the end line width, we're drawing into the grid lines but these are drawn first so it's ok
+            fillRect (x, y, gridSize context + 1, gridSize context + 1)
+            drawNextPiece
+            -- Extra gridLineWidth is because we're drawing from after the grid line
+            where x = gridXPadding context + fromIntegral j          * gridLineWidth + fromIntegral j          * gridSize context
+                  y = gridYPadding context + fromIntegral iCorrected * gridLineWidth + fromIntegral iCorrected * gridSize context
+                  iCorrected = i - (matrixHeight - matrixVisibleHeight) -- not -1 here because we are indexing off of something new, we want i = 4 to go to i = 0
+                  drawNextPiece
+                    | (i + 1) < matrixHeight && j       < matrixWidth = drawPiece (i + 1) j       -- We're checking if the cols are in bounds and if the next row will be in bounds
+                    | i       < matrixHeight && (j + 1) < matrixWidth = drawPiece 0       (j + 1) -- We're checking if the rows are in bounds and if the next col will be in bounds (this is under the assumption the next row is out of bounds)
+                    | otherwise                                       = return ()
 
 -- We write drawGridXLines to not take an int, then we create a partial application function
 -- this makes is to we don't need to call drawGridXLines with 0, since that would be confusing for people reading the code 
