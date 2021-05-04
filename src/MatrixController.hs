@@ -125,7 +125,10 @@ controlBoard keyCode boardMatrix = do
         Just 37 -> (if canMovePieceLeft  toMove boardMatrix then movePieceLeft  toMove boardMatrix else boardMatrix, True)
         Just 39 -> (if canMovePieceRight toMove boardMatrix then movePieceRight toMove boardMatrix else boardMatrix, True)
         Just 69 -> (rotatePiece toMove boardMatrix, True)
+        Just 40 -> (hardDropPieces boardMatrix, True)
         _       -> (boardMatrix, False)
+        -- TODO: Just 40 -> Drop
+        --       Just 81 -> rotate other way
 
 -- Get the location of all the falling pieces
 -- Get a list of tuples with a row and its index, and then from that we get the individual elements with their index in the column
@@ -243,3 +246,19 @@ getShadowPieces boardMatrix = do
                         | otherwise = boardMatrix !! row !! col
                             -- Get the old piece so we know what to set for a shadow
                             where oldPiece = boardMatrix !! fst (head $ getFallingPieces boardMatrix) !! snd (head $ getFallingPieces boardMatrix)
+
+hardDropPieces :: Matrix -> Matrix
+hardDropPieces boardMatrix = do
+    getFullyDroppedPieces $ getFallingPieces boardMatrix
+        where getFullyDroppedPieces fallingPieces
+                | null fallingPieces = boardMatrix
+                -- If we can drop the pieces, drop them
+                | canFallPieces fallingPieces boardMatrix = getFullyDroppedPieces [(fst fallingPiece + 1, snd fallingPiece) | fallingPiece <- fallingPieces]
+                -- If we can't drop them, move them all the way to the bottom
+                -- TODO: Setting them causes a bug, but ideally we would want them to be automatically set
+                | otherwise = mapBoard boardMatrix hardDrop
+                    where hardDrop (row, col)
+                            | (row, col) `elem` fallingPieces                = oldPiece
+                            | (row, col) `elem` getFallingPieces boardMatrix = GridSquare None Empty
+                            | otherwise                                      = boardMatrix !! row !! col  
+                                where oldPiece = boardMatrix !! fst (head $ getFallingPieces boardMatrix) !! snd (head $ getFallingPieces boardMatrix)
