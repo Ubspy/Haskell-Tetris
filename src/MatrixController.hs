@@ -90,8 +90,8 @@ placeOrangeL boardMatrix = take offBoardRows boardMatrix ++ lPieces ++ drop (off
 placeBlueL :: Matrix -> Matrix
 placeBlueL boardMatrix = take offBoardRows boardMatrix ++ lPieces ++ drop (offBoardRows + 3) boardMatrix
     where offBoardRows = matrixHeight - matrixVisibleHeight
-          lPieces = (replicate 4 (GridSquare None Empty) ++ replicate 2 (GridSquare OrangeL Falling) ++ replicate 4 (GridSquare None Empty))
-            : replicate 2 (replicate 5 (GridSquare None Empty) ++ [GridSquare OrangeL Falling] ++ replicate 4 (GridSquare None Empty))
+          lPieces = (replicate 4 (GridSquare None Empty) ++ replicate 2 (GridSquare BlueL Falling) ++ replicate 4 (GridSquare None Empty))
+            : replicate 2 (replicate 5 (GridSquare None Empty) ++ [GridSquare BlueL Falling] ++ replicate 4 (GridSquare None Empty))
 
 placeRedZ :: Matrix -> Matrix
 placeRedZ boardMatrix = take offBoardRows boardMatrix ++ zPieces ++ drop (offBoardRows + 3) boardMatrix
