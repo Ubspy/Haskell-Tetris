@@ -242,8 +242,9 @@ getShadowPieces boardMatrix = do
             -- If they can't fall, map the board and set shadow pieces
             | otherwise = mapBoard boardMatrix placeShadows
                 where placeShadows (row, col)
-                        | (row, col) `elem` shadows = GridSquare (pieceType oldPiece) Shadow
-                        | otherwise = boardMatrix !! row !! col
+                        | (row, col) `elem` getFallingPieces boardMatrix = oldPiece
+                        | (row, col) `elem` shadows                      = GridSquare (pieceType oldPiece) Shadow
+                        | otherwise                                      = boardMatrix !! row !! col
                             -- Get the old piece so we know what to set for a shadow
                             where oldPiece = boardMatrix !! fst (head $ getFallingPieces boardMatrix) !! snd (head $ getFallingPieces boardMatrix)
 

@@ -50,7 +50,7 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
 
 getNewBoard :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO Matrix
 getNewBoard context level framesSinceDrop boardMatrix gameState
-  | gameState == Drop = trace "DROP" $ do
+  | gameState == Drop = do
     clearedBoard <- clearFullRows  boardMatrix
     placeRandomPiece clearedBoard
   | gameState == Tick = return $ tickBoard boardMatrix
