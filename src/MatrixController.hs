@@ -113,7 +113,7 @@ tickBoard boardMatrix = do
     let toMove = getFallingPieces boardMatrix
     if not (null toMove)
         then
-            if canFallPiece toMove boardMatrix
+            if canFallPieces toMove boardMatrix
                 then movePieceDown   toMove boardMatrix
                 else setFallingPiece toMove boardMatrix
         else error "This is bad"
@@ -214,8 +214,8 @@ mapBoard boardMatrix mapFunc = joinRow 0 where
                 | otherwise               = [mapFunc (row, col)]
 
 -- Checks if a piece can fall by looking at the pieces below it
-canFallPiece :: [(Int, Int)] -> Matrix -> Bool
-canFallPiece toMove boardMatrix = (maximum [fst i | i <- toMove]) /= (matrixHeight - 1) -- First check to see if it's at the bottom
+canFallPieces :: [(Int, Int)] -> Matrix -> Bool
+canFallPieces toMove boardMatrix = (maximum [fst i | i <- toMove]) /= (matrixHeight - 1) -- First check to see if it's at the bottom
     && all (\ (row, col) -> state (boardMatrix !! (row + 1) !! col) /= Set) toMove -- Then see if it collides with another piece
 
 canMovePieceLeft :: [(Int, Int)] -> Matrix -> Bool
