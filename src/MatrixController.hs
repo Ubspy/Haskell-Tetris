@@ -52,7 +52,7 @@ placeRandomPiece :: Matrix -> IO Matrix
 placeRandomPiece boardMatrix = do
     rand <- randomRIO (1, 7 :: Int) 
     case rand of
-        -- _ -> return $ placeLine boardMatrix
+        -- _ -> return $ placeBlueL boardMatrix
         1 -> return $ placeLine    boardMatrix
         2 -> return $ placeSquare  boardMatrix
         3 -> return $ placeT       boardMatrix
@@ -255,10 +255,9 @@ hardDropPieces boardMatrix = do
                 -- If we can drop the pieces, drop them
                 | canFallPieces fallingPieces boardMatrix = getFullyDroppedPieces [(fst fallingPiece + 1, snd fallingPiece) | fallingPiece <- fallingPieces]
                 -- If we can't drop them, move them all the way to the bottom
-                -- TODO: Setting them causes a bug, but ideally we would want them to be automatically set
                 | otherwise = mapBoard boardMatrix hardDrop
                     where hardDrop (row, col)
-                            | (row, col) `elem` fallingPieces                = oldPiece
+                            | (row, col) `elem` fallingPieces                = GridSquare (pieceType oldPiece) Set
                             | (row, col) `elem` getFallingPieces boardMatrix = GridSquare None Empty
                             | otherwise                                      = boardMatrix !! row !! col  
                                 where oldPiece = boardMatrix !! fst (head $ getFallingPieces boardMatrix) !! snd (head $ getFallingPieces boardMatrix)

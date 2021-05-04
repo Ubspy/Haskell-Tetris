@@ -9,13 +9,14 @@ import MatrixController
 import DrawGrid
 import Debug.Trace
 
-data GameState = Menu | Playing | Tick | Drop | Lost deriving Eq
+data GameState = Menu | Placed | Playing | Tick | Drop | Lost deriving Eq
 
 -- TODO: Remove, this is for debugging
 instance Show GameState where
   show state
         | state == Menu = "Menu"
         | state == Playing = "Playing"
+        | state == Placed = "Placed"
         | state == Tick = "Tick"
         | state == Drop = "Drop"
         | state == Lost = "Lost"
@@ -49,19 +50,21 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
 
 getNewBoard :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO Matrix
 getNewBoard context level framesSinceDrop boardMatrix gameState
-  | gameState == Drop = do
+  | gameState == Drop = trace "DROP" $ do
     clearedBoard <- clearFullRows  boardMatrix
     placeRandomPiece clearedBoard
   | gameState == Tick = return $ tickBoard boardMatrix
   | otherwise         = processInput context boardMatrix
 
 getNewState :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO GameState
-getNewState context level framesSinceDrop boardMatrix gameState = do
-  bruh where bruh
-              | gameState == Drop = return Playing
-              | gameState == Tick = return $ if null (getFallingPieces boardMatrix) then Drop else Playing
-              | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** fromIntegral level)) = return Tick
-              | otherwise = return Playing
+getNewState context level framesSinceDrop boardMatrix gameState
+  | gameState == Drop = return Placed -- We have an extra "Placed" state in between Drop and Played so the drawing works properly
+  | gameState == Placed = return Playing
+  | gameState == Tick = return $ if null (getFallingPieces boardMatrix) then Drop else Playing
+  -- This is from the hard drop, if there's no falling pieces then we have dropped
+  | null (getFallingPieces boardMatrix) = return Drop
+  | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** fromIntegral level)) = return Tick
+  | otherwise = return Playing
 
 processInput :: DeviceContext -> Matrix -> IO Matrix 
 processInput context boardMatrix = do
