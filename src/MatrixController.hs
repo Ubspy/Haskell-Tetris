@@ -227,3 +227,19 @@ canMovePieceRight :: [(Int, Int)] -> Matrix -> Bool
 canMovePieceRight toMove boardMatrix = (maximum [snd i | i <- toMove]) /= 9 -- Check to make sure we're not going OOB
     -- Check if all pieces to the right are free
     && all (\ (row, col) -> state (boardMatrix !! row !! (col + 1)) /= Set) toMove
+
+getShadowPieces :: Matrix -> Matrix
+getShadowPieces boardMatrix = do
+    tryShadowPieces $ getFallingPieces boardMatrix
+    where tryShadowPieces shadows
+            -- If there's no falling pieces, just return the board matrix
+            | null shadows = boardMatrix
+            -- If they can fall, then move them down and check again
+            | canFallPieces shadows boardMatrix = tryShadowPieces [(fst shadow + 1, snd shadow) | shadow <- shadows]
+            -- If they can't fall, map the board and set shadow pieces
+            | otherwise = mapBoard boardMatrix placeShadows
+                where placeShadows (row, col)
+                        | (row, col) `elem` shadows = GridSquare (pieceType oldPiece) Shadow
+                        | otherwise = boardMatrix !! row !! col
+                            -- Get the old piece so we know what to set for a shadow
+                            where oldPiece = boardMatrix !! fst (head $ getFallingPieces boardMatrix) !! snd (head $ getFallingPieces boardMatrix)

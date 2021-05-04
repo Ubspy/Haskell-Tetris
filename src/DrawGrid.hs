@@ -40,8 +40,8 @@ drawPieces context boardMatrix = do
 
             -- Set the opacity
             let alphaStyle = case state (boardMatrix !! i !! j) of
-                    Shadow -> ", 50)"
-                    _      -> ", 255)"
+                    Shadow -> ", 0.3)"
+                    _      -> ", 1.0)"
 
             -- Set the fill style in HTML canvas
             fillStyle $ pack (colorStyle ++ alphaStyle)

@@ -85,5 +85,10 @@ updateBoard :: DeviceContext -> Matrix -> Canvas ()
 updateBoard context boardMatrix = do
   clearRect (0, 0, width context, height context)
   drawBackground context
-  drawPieces context boardMatrix
+
+  let shadowedBoard = getShadowPieces boardMatrix
+
+  drawPieces context shadowedBoard
   drawGrid context
+
+-- TODO: proper lose conditionm shadows, insta-drop, rotate other way, fix rotation, extra input on drop, holding, score, queue of next pieces
