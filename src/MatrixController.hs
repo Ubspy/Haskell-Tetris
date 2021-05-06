@@ -49,12 +49,17 @@ clearFullRows boardMatrix = do
                     checkRow row clearedMatrix -- Check this row again incase now the new row in this place needs to be cleared
                 | otherwise = checkRow (row - 1) currentMatrix
 
+-- Check losing condition
+canPlaceNewPiece :: Matrix -> Bool 
+-- Since the largest piece when placed is 4 wide, we want to see of all 4 of those squares are empty in the first visible row
+-- If they are not empty, there are very few cases where the player could come back and win, while we could make a more advanced system where we check for any empty square, I think this is sufficient
+canPlaceNewPiece boardMatrix = all (\ square -> state square /= Set) (take 4 (drop ((matrixWidth - 4) `div` 2) (boardMatrix !! (matrixHeight - matrixVisibleHeight))))
+
 -- Takes the board and puts a random piece on it using place functions
 placeRandomPiece :: Matrix -> IO Matrix
 placeRandomPiece boardMatrix = do
     rand <- randomRIO (1, 7 :: Int) 
     case rand of
-        -- _ -> return $ placeBlueL boardMatrix
         1 -> return $ placeLine    boardMatrix
         2 -> return $ placeSquare  boardMatrix
         3 -> return $ placeT       boardMatrix

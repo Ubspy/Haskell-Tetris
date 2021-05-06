@@ -34,36 +34,41 @@ runTetris = blankCanvas 3000 { events = ["keydown"] } $ \ context -> gameLoop co
   initialBoard = replicate matrixHeight (replicate matrixWidth (GridSquare None Empty))
 
 -- Game loop function, to take care of handling the main game loop
-gameLoop :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO ()
+gameLoop :: DeviceContext -> Double -> Int -> Matrix -> GameState -> IO ()
 gameLoop context level framesSinceDrop boardMatrix gameState = do
   newBoard <- getNewBoard context level framesSinceDrop boardMatrix gameState
   newState <- getNewState context level framesSinceDrop newBoard    gameState
 
-  let newLevel = level -- if gameState == Drop then level else level
+  let newLevel = if gameState == Drop then level else level + level * 0.1
   let newFrames = if newState /= gameState then 0 else framesSinceDrop + 1
 
   send context $ do
-    unless (newState == gameState) $ updateBoard context boardMatrix
+    -- If we've lost, show game over, otherwise update board if the game state has changed
+    if newState == Lost
+      then gameOver context
+      else unless (newState == gameState) $ updateBoard context boardMatrix
     
   threadDelay (20 * 1000)
-  gameLoop context newLevel newFrames newBoard newState
+  -- Continune as long as the player has not lost
+  when (newState /= Lost) $ gameLoop context newLevel newFrames newBoard newState
 
-getNewBoard :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO Matrix
+getNewBoard :: DeviceContext -> Double -> Int -> Matrix -> GameState -> IO Matrix
 getNewBoard context level framesSinceDrop boardMatrix gameState
   | gameState == Drop = do
     clearedBoard <- clearFullRows  boardMatrix
-    placeRandomPiece clearedBoard
+    if canPlaceNewPiece boardMatrix then placeRandomPiece clearedBoard else return clearedBoard
   | gameState == Tick = return $ tickBoard boardMatrix
   | otherwise         = processInput context boardMatrix
 
-getNewState :: DeviceContext -> Int -> Int -> Matrix -> GameState -> IO GameState
+getNewState :: DeviceContext -> Double -> Int -> Matrix -> GameState -> IO GameState
 getNewState context level framesSinceDrop boardMatrix gameState
-  | gameState == Drop = return Placed -- We have an extra "Placed" state in between Drop and Played so the drawing works properly
+  -- If we can't place a new piece, the player has lost
+  | gameState == Drop = if canPlaceNewPiece boardMatrix then return Placed else return Lost -- We have an extra "Placed" state in between Drop and Played so the drawing works properly
   | gameState == Placed = return Playing
   | gameState == Tick = return $ if null (getFallingPieces boardMatrix) then Drop else Playing
   -- This is from the hard drop, if there's no falling pieces then we have dropped
   | null (getFallingPieces boardMatrix) = return Drop
-  | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** fromIntegral level)) = return Tick
+  | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** fromIntegral (floor level))) = return Tick
   | otherwise = return Playing
 
 processInput :: DeviceContext -> Matrix -> IO Matrix 
@@ -93,5 +98,20 @@ updateBoard context boardMatrix = do
 
   drawPieces context shadowedBoard
   drawGrid context
+
+gameOver :: DeviceContext -> Canvas ()
+gameOver context = do
+  -- Setting the base line of the text on the y scale to be in the middle
+  textBaseline MiddleBaseline
+  -- Setting the align to center, this will make sure the text is drawn in the center
+  textAlign CenterAnchor
+
+  fillStyle   "#f2f2f2"
+  strokeStyle "#262626"
+  lineWidth    4
+  font        "bold 72pt Roboto"
+  fillText("Game Over!", width context / 2, height context / 2) -- Draw game over text in the middle of the screen
+  strokeText("Game Over!", width context / 2, height context / 2)
+  return ()
 
 -- TODO: proper lose conditionm shadows, insta-drop, rotate other way, fix rotation, extra input on drop, holding, score, queue of next pieces
