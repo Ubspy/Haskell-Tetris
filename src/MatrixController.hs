@@ -8,6 +8,8 @@ import Graphics.Blank
 data SquareState = Empty | Set | Falling | Shadow deriving Eq
 data Piece = None | Line | Square | T | OrangeL | BlueL | RedZ | GreenZ 
 
+data Rotation = Clockwise | CounterClockwise deriving Eq
+
 -- This is what the board will be storing, each square in a grid will have a state and a piece type
 -- State is for actual logic in how to handle each square
 -- Piece is basically just what color is it
@@ -124,7 +126,8 @@ controlBoard keyCode boardMatrix = do
     case keyCode of
         Just 37 -> (if canMovePieceLeft  toMove boardMatrix then movePieceLeft  toMove boardMatrix else boardMatrix, True)
         Just 39 -> (if canMovePieceRight toMove boardMatrix then movePieceRight toMove boardMatrix else boardMatrix, True)
-        Just 69 -> (rotatePiece toMove boardMatrix, True)
+        Just 69 -> (rotatePiece toMove Clockwise boardMatrix,        True)
+        Just 81 -> (rotatePiece toMove CounterClockwise boardMatrix, True)
         Just 40 -> (hardDropPieces boardMatrix, True)
         _       -> (boardMatrix, False)
         -- TODO: Just 40 -> Drop
@@ -168,10 +171,11 @@ movePieceRight toMove boardMatrix = mapBoard boardMatrix moveSquare where
         | otherwise                                    = boardMatrix !! row !! col
 
 -- TODO: Rotating will continually move the piece down, what would be idea is if you stored the center for a piece so it doesn't recalculate it to be at the bottom every time
-rotatePiece :: [(Int, Int)] -> Matrix -> Matrix
-rotatePiece toMove boardMatrix = do
+-- TODO: Rotating CW breaks
+rotatePiece :: [(Int, Int)] -> Rotation -> Matrix -> Matrix
+rotatePiece toMove rotationDirection boardMatrix = do
     -- Gets the new squares from the getRotated squares function
-    let newSquares = getRotatedSquares toMove
+    let newSquares = getRotatedSquares toMove rotationDirection
     -- Gets the piece type from one of the old squares before any rotation
     let oldSquare  = boardMatrix !! (fst . head) toMove !! (snd . head) toMove
     case canRotatePiece newSquares boardMatrix of
@@ -187,15 +191,17 @@ rotatePiece toMove boardMatrix = do
 canRotatePiece :: [(Int, Int)] -> Matrix -> Bool 
 canRotatePiece newSquares boardMatrix = all (\ (row, col) -> state (boardMatrix !! row !! col) /= Set) newSquares
 
-getRotatedSquares :: [(Int, Int)] -> [(Int, Int)]
-getRotatedSquares toMove = do
-    let maxYCoord = maximum [fst i | i <- toMove] + 1
-    let minYCoord = minimum [fst i | i <- toMove]
-    let maxXCoord = maximum [snd i | i <- toMove] + 1
-    let minXCoord = minimum [snd i | i <- toMove]
-    let tmp = fromIntegral (maxYCoord - minYCoord) / 2
-    let center = (fromIntegral (maxYCoord - minYCoord) / 2 + fromIntegral minYCoord, fromIntegral (maxXCoord - minXCoord) / 2 + fromIntegral minXCoord)
-    map (\ square -> (floor (snd center) - snd square + floor (fst center), fst square - floor (fst center) + floor (snd center))) toMove
+getRotatedSquares :: [(Int, Int)] -> Rotation -> [(Int, Int)]
+getRotatedSquares toMove rotationDirection
+    | rotationDirection == Clockwise        = map (\ square -> (floor (fst center) + floor (snd center) - snd square, floor (snd center) + fst square - floor (fst center))) toMove
+    | rotationDirection == CounterClockwise = map (\ square -> (floor (snd center) - floor (snd center) + snd square, floor (snd center) - fst square + floor (fst center))) toMove 
+        where   
+            maxYCoord = maximum [fst i | i <- toMove] + 1
+            minYCoord = minimum [fst i | i <- toMove]
+            maxXCoord = maximum [snd i | i <- toMove] + 1
+            minXCoord = minimum [snd i | i <- toMove]
+            tmp = fromIntegral (maxYCoord - minYCoord) / 2
+            center = (fromIntegral (maxYCoord - minYCoord) / 2 + fromIntegral minYCoord, fromIntegral (maxXCoord - minXCoord) / 2 + fromIntegral minXCoord)
 
 -- Copy board matrix but set falling pieces to set pieces
 setFallingPiece :: [(Int, Int)] -> Matrix -> Matrix
