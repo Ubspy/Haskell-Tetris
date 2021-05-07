@@ -188,10 +188,12 @@ rotatePiece toMove rotationDirection boardMatrix = do
 canRotatePiece :: [(Int, Int)] -> Matrix -> Bool 
 canRotatePiece newSquares boardMatrix = all (\ (row, col) -> state (boardMatrix !! row !! col) /= Set) newSquares
 
+-- TODO: Store center so it's not constantly shifting pieces over
 getRotatedSquares :: [(Int, Int)] -> Rotation -> [(Int, Int)]
 getRotatedSquares toMove rotationDirection
     | rotationDirection == Clockwise        = map (\ square -> (floor (fst center) + floor (snd center) - snd square, floor (snd center) + fst square - floor (fst center))) toMove
-    | rotationDirection == CounterClockwise = map (\ square -> (floor (snd center) - floor (snd center) + snd square, floor (snd center) - fst square + floor (fst center))) toMove 
+    -- The (-0.5) is cringe but it stops the piece from constantly shifting to the left
+    | rotationDirection == CounterClockwise = map (\ square -> (floor (fst center) - floor (snd center) + snd square, floor (snd center) - fst square + floor (fst center - 0.5))) toMove
         where   
             maxYCoord = maximum [fst i | i <- toMove] + 1
             minYCoord = minimum [fst i | i <- toMove]
