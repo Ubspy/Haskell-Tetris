@@ -68,51 +68,43 @@ placeRandomPiece boardMatrix = do
         6 -> return $ placeRedZ    boardMatrix
         7 -> return $ placeGreenZ  boardMatrix
 
--- This places a line at the top of the board
+-- Use mapBoard to place a pattern at the top of the board
+placePiece :: [(Int, Int)] -> Int -> GridSquare -> Matrix -> Matrix
+placePiece piecePattern pieceWidth squareToPlace boardMatrix = mapBoard boardMatrix placeSquare
+    where xOffset = (matrixWidth - pieceWidth) `div` 2
+          yOffset = matrixHeight - matrixVisibleHeight -- TODO: Make this adjustable based on how full the board is
+          piecesToPlace = [(i + yOffset, j + xOffset) | (i, j) <- piecePattern] -- Go through the pattern and add the the offsets to put it in the right place
+          placeSquare (row, col)
+            | (row, col) `elem` piecesToPlace = squareToPlace
+            | otherwise                       = boardMatrix !! row !! col
+
 placeLine :: Matrix -> Matrix
--- Copy the first rows that aren't visible, place line, then copy the rest in
-placeLine boardMatrix = take offBoardRows boardMatrix ++ [linePieces] ++ drop (offBoardRows + 1) boardMatrix
- where offBoardRows = matrixHeight - matrixVisibleHeight
-       linePieces = replicate 3 (GridSquare None Empty) ++ replicate 4 (GridSquare Line Falling) ++ replicate 3 (GridSquare None Empty)
-       -- TODO: This clears top squares, kinda bad, this needs to be fixed
+placeLine = placePiece linePattern 4 (GridSquare Line Falling)
+    where linePattern = [(0, 0), (0, 1), (0, 2), (0, 3)]
 
 placeSquare :: Matrix -> Matrix
-placeSquare boardMatrix = take offBoardRows boardMatrix ++ squarePieces ++ drop (offBoardRows + 2) boardMatrix -- Square piece is two long 
-    where offBoardRows = matrixHeight - matrixVisibleHeight
-          squarePieces = replicate 2 $ replicate 4 (GridSquare None Empty) ++ replicate 2 (GridSquare Square Falling) ++ replicate 4 (GridSquare None Empty)
+placeSquare = placePiece squarePattern 2 (GridSquare Square Falling)
+    where squarePattern = [(0, 0), (0, 1), (1, 0), (1, 1)]
 
 placeT :: Matrix -> Matrix
-placeT boardMatrix = take offBoardRows boardMatrix ++ tPieces ++ drop (offBoardRows + 3) boardMatrix
-    where offBoardRows = matrixHeight - matrixVisibleHeight
-          tPieces = [replicate 4 (GridSquare None Empty) ++ [GridSquare T Falling] ++ replicate 5 (GridSquare None Empty)]
-            ++ [replicate 4 (GridSquare None Empty) ++ replicate 2 (GridSquare T Falling) ++ replicate 4 (GridSquare None Empty)]
-            ++ [replicate 4 (GridSquare None Empty) ++ [GridSquare T Falling] ++ replicate 5 (GridSquare None Empty)]
+placeT = placePiece tPattern 3 (GridSquare T Falling)
+    where tPattern = [(0, 1), (1, 0), (1, 1), (1, 2)]
 
 placeOrangeL :: Matrix -> Matrix
-placeOrangeL boardMatrix = take offBoardRows boardMatrix ++ lPieces ++ drop (offBoardRows + 3) boardMatrix
-    where offBoardRows = matrixHeight - matrixVisibleHeight
-          lPieces = (replicate 4 (GridSquare None Empty) ++ replicate 2 (GridSquare OrangeL Falling) ++ replicate 4 (GridSquare None Empty))
-            : replicate 2 (replicate 4 (GridSquare None Empty) ++ [GridSquare OrangeL Falling] ++ replicate 5 (GridSquare None Empty))
+placeOrangeL = placePiece lPattern 2 (GridSquare OrangeL Falling)
+    where lPattern = [(0, 0), (0, 1), (1, 1), (2, 1)]
 
 placeBlueL :: Matrix -> Matrix
-placeBlueL boardMatrix = take offBoardRows boardMatrix ++ lPieces ++ drop (offBoardRows + 3) boardMatrix
-    where offBoardRows = matrixHeight - matrixVisibleHeight
-          lPieces = (replicate 4 (GridSquare None Empty) ++ replicate 2 (GridSquare BlueL Falling) ++ replicate 4 (GridSquare None Empty))
-            : replicate 2 (replicate 5 (GridSquare None Empty) ++ [GridSquare BlueL Falling] ++ replicate 4 (GridSquare None Empty))
+placeBlueL = placePiece lPattern 2 (GridSquare BlueL Falling)
+    where lPattern = [(0, 0), (0, 1), (1, 0), (2, 0)]
 
 placeRedZ :: Matrix -> Matrix
-placeRedZ boardMatrix = take offBoardRows boardMatrix ++ zPieces ++ drop (offBoardRows + 3) boardMatrix
-    where offBoardRows = matrixHeight - matrixVisibleHeight
-          zPieces = [replicate 5 (GridSquare None Empty) ++ [GridSquare RedZ Falling] ++ replicate 4 (GridSquare None Empty)]
-            ++ [replicate 4 (GridSquare None Empty) ++ replicate 2 (GridSquare RedZ Falling) ++ replicate 4 (GridSquare None Empty)]
-            ++ [replicate 4 (GridSquare None Empty) ++             [GridSquare RedZ Falling] ++ replicate 5 (GridSquare None Empty)]
+placeRedZ = placePiece zPattern 2 (GridSquare RedZ Falling)
+    where zPattern = [(0, 1), (1, 0), (1, 1), (2, 0)]
 
 placeGreenZ :: Matrix -> Matrix
-placeGreenZ boardMatrix = take offBoardRows boardMatrix ++ zPieces ++ drop (offBoardRows + 3) boardMatrix
-    where offBoardRows = matrixHeight - matrixVisibleHeight
-          zPieces = [replicate 4 (GridSquare None Empty) ++ [GridSquare GreenZ Falling] ++ replicate 5 (GridSquare None Empty)]
-            ++ [replicate 4 (GridSquare None Empty) ++ replicate 2 (GridSquare GreenZ Falling) ++ replicate 4 (GridSquare None Empty)]
-            ++ [replicate 5 (GridSquare None Empty) ++             [GridSquare GreenZ Falling] ++ replicate 4 (GridSquare None Empty)]
+placeGreenZ = placePiece zPattern 2 (GridSquare GreenZ Falling)
+    where zPattern = [(0, 0), (1, 0), (1, 1), (2, 1)]
 
 -- This will change the board depending on what kind of tick it is, if the piece can fall, we make it fall, if not we lock it in place
 tickBoard :: Matrix -> Matrix
