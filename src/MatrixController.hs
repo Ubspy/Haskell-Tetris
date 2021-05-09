@@ -69,9 +69,11 @@ placeRandomPiece boardMatrix = do
         7 -> return $ placeGreenZ  boardMatrix
 
 -- Use mapBoard to place a pattern at the top of the board
-placePiece :: [(Int, Int)] -> Int -> GridSquare -> Matrix -> Matrix
-placePiece piecePattern pieceWidth squareToPlace boardMatrix = mapBoard boardMatrix placeSquare
-    where xOffset = (matrixWidth - pieceWidth) `div` 2
+placePiece :: [(Int, Int)] -> GridSquare -> Matrix -> Matrix
+placePiece piecePattern squareToPlace boardMatrix = mapBoard boardMatrix placeSquare
+    where pieceWidth = maximum [fst square | square <- piecePattern]
+          pieceHeight = maximum [snd square | square <- piecePattern]
+          xOffset = (matrixWidth - pieceWidth) `div` 2
           yOffset = matrixHeight - matrixVisibleHeight -- TODO: Make this adjustable based on how full the board is
           piecesToPlace = [(i + yOffset, j + xOffset) | (i, j) <- piecePattern] -- Go through the pattern and add the the offsets to put it in the right place
           placeSquare (row, col)

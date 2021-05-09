@@ -23,7 +23,7 @@ drawGrid context = do -- Draw the lines in the X direction and the Y direction
 
 drawPieces :: DeviceContext -> Matrix -> Canvas ()
 drawPieces context boardMatrix = do
-    drawPiece (matrixHeight - matrixVisibleHeight - 1) 0
+    drawPiece (matrixHeight - matrixVisibleHeight) 0
       where
         drawPiece i j
           | state (boardMatrix !! i !! j)  == Empty = drawNextPiece
@@ -54,8 +54,10 @@ drawPieces context boardMatrix = do
                   y = gridYPadding context + fromIntegral iCorrected * gridLineWidth + fromIntegral iCorrected * gridSize context
                   iCorrected = i - (matrixHeight - matrixVisibleHeight) -- not -1 here because we are indexing off of something new, we want i = 4 to go to i = 0
                   drawNextPiece
-                    | (i + 1) < matrixHeight && j       < matrixWidth = drawPiece (i + 1) j       -- We're checking if the cols are in bounds and if the next row will be in bounds
-                    | i       < matrixHeight && (j + 1) < matrixWidth = drawPiece 0       (j + 1) -- We're checking if the rows are in bounds and if the next col will be in bounds (this is under the assumption the next row is out of bounds)
+                    -- We're checking if the cols are in bounds and if the next row will be in bounds
+                    | (i + 1) < matrixHeight && j       < matrixWidth = drawPiece (i + 1) j       
+                    -- We're checking if the rows are in bounds and if the next col will be in bounds (this is under the assumption the next row is out of bounds)
+                    | i       < matrixHeight && (j + 1) < matrixWidth = drawPiece (matrixHeight - matrixVisibleHeight ) (j + 1) 
                     | otherwise                                       = return ()
 
 -- We write drawGridXLines to not take an int, then we create a partial application function
