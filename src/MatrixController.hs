@@ -215,6 +215,7 @@ setFallingPiece toMove boardMatrix = mapBoard boardMatrix setSquare where
         | otherwise                                    = boardMatrix !! row !! col
 
 -- This function allows you to remap the board given a function that changes old squares to new squares
+-- This is another function I'm really proud of, considering I use it all over the place I think I did a good job
 mapBoard :: Matrix -> ((Int, Int) -> GridSquare) -> Matrix
 mapBoard boardMatrix mapFunc = joinRow 0 where
     -- Loop through rows first, add each new col up
