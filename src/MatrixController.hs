@@ -14,7 +14,7 @@ data Rotation = Clockwise | CounterClockwise deriving Eq
 -- This is what the board will be storing, each square in a grid will have a state and a piece type
 -- State is for actual logic in how to handle each square
 -- Piece is basically just what color is it
-data GridSquare = GridSquare { pieceType :: Piece, state :: SquareState}
+data GridSquare = GridSquare { pieceType :: Piece, state :: SquareState }
 
 -- TODO: Remove, this is for debugging
 instance Show GridSquare where
@@ -22,9 +22,9 @@ instance Show GridSquare where
                 | otherwise             = "1"
 
 instance Show SquareState where
-    show state  | state == Set = "Set"
+    show state  | state == Set     = "Set"
                 | state == Falling = "Falling"
-                | otherwise = "Bruh"
+                | otherwise        = "Bruh"
 
 -- Matrix type declaration
 type Matrix = [[GridSquare]]
@@ -132,8 +132,6 @@ controlBoard keyCode boardMatrix = do
         Just 81 -> (rotatePiece toMove CounterClockwise boardMatrix, True)
         Just 40 -> (hardDropPieces boardMatrix, True)
         _       -> (boardMatrix, False)
-        -- TODO: Just 40 -> Drop
-        --       Just 81 -> rotate other way
 
 -- Get the location of all the falling pieces
 -- Get a list of tuples with a row and its index, and then from that we get the individual elements with their index in the column
