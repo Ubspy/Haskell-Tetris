@@ -4,6 +4,7 @@ import System.Random
 import Data.List
 import Debug.Trace
 import Graphics.Blank
+import Data.Time.Clock.POSIX
 
 data SquareState = Empty | Set | Falling | Shadow deriving Eq
 data Piece = None | Line | Square | T | OrangeL | BlueL | RedZ | GreenZ 
@@ -58,8 +59,10 @@ canPlaceNewPiece boardMatrix = all (\ square -> state square /= Set) (take 4 (dr
 -- Takes the board and puts a random piece on it using place functions
 placeRandomPiece :: Matrix -> IO Matrix
 placeRandomPiece boardMatrix = do
-    rand <- randomRIO (1, 7 :: Int) 
-    case rand of
+    -- Adapted from https://stackoverflow.com/questions/17909770/get-unix-epoch-time-as-int
+    -- I honestly don't know how this works, I get getPOSIX time and function composition but what is <$>? no idea
+    rand <- round . (1000 *) <$> getPOSIXTime
+    case rand * 10000 `mod` 7 + 1 of
         1 -> return $ placeLine    boardMatrix
         2 -> return $ placeSquare  boardMatrix
         3 -> return $ placeT       boardMatrix
