@@ -72,43 +72,54 @@ placeRandomPiece boardMatrix = do
         7 -> return $ placeGreenZ  boardMatrix
 
 -- Use mapBoard to place a pattern at the top of the board
+-- I'm really proud of this function, I know to you this is probably simple, but I really think I did a good job here
 placePiece :: [(Int, Int)] -> GridSquare -> Matrix -> Matrix
-placePiece piecePattern squareToPlace boardMatrix = mapBoard boardMatrix placeSquare
-    where pieceWidth = maximum [fst square | square <- piecePattern]
-          pieceHeight = maximum [snd square | square <- piecePattern]
+placePiece piecePattern squareToPlace boardMatrix = trace (show (getMaxPlacedPiece boardMatrix pieceWidth) ++ ", " ++ show pieceWidth ++ ", " ++ show pieceHeight) mapBoard boardMatrix placeSquare
+    where pieceWidth = maximum [snd square | square <- piecePattern] + 1 -- Add 1 for zero-indexing
+          pieceHeight = maximum [fst square | square <- piecePattern] + 1
           xOffset = (matrixWidth - pieceWidth) `div` 2
-          yOffset = matrixHeight - matrixVisibleHeight -- TODO: Make this adjustable based on how full the board is
+          yOffset
+            -- If the difference in between the highest filled piece on the board and the off grid squares is less than the piece height, we place it at that max piece place minus the piece height
+            | getMaxPlacedPiece boardMatrix pieceWidth - (matrixHeight - matrixVisibleHeight) < pieceHeight = getMaxPlacedPiece boardMatrix pieceWidth - pieceHeight
+            | otherwise                                                                                     = matrixHeight - matrixVisibleHeight 
           piecesToPlace = [(i + yOffset, j + xOffset) | (i, j) <- piecePattern] -- Go through the pattern and add the the offsets to put it in the right place
           placeSquare (row, col)
             | (row, col) `elem` piecesToPlace = squareToPlace
             | otherwise                       = boardMatrix !! row !! col
 
+getMaxPlacedPiece :: Matrix -> Int -> Int
+-- Get the highest row where there is a piece that is in the Set state in the middle cols
+getMaxPlacedPiece boardMatrix pieceWidth =  if null yIndeces then matrixHeight - 1 else minimum yIndeces
+    where yIndeces = [rowIndex | (rowIndex, row) <- zip [0..] boardMatrix, (colIndex, col) <- zip [0..] row, any (\ square -> state square == Set) row && colIndex <= maxX && colIndex >= minX]
+          minX           = (matrixWidth - pieceWidth) `div` 2
+          maxX           = minX + pieceWidth
+
 placeLine :: Matrix -> Matrix
-placeLine = placePiece linePattern 4 (GridSquare Line Falling)
+placeLine = placePiece linePattern (GridSquare Line Falling)
     where linePattern = [(0, 0), (0, 1), (0, 2), (0, 3)]
 
 placeSquare :: Matrix -> Matrix
-placeSquare = placePiece squarePattern 2 (GridSquare Square Falling)
+placeSquare = placePiece squarePattern (GridSquare Square Falling)
     where squarePattern = [(0, 0), (0, 1), (1, 0), (1, 1)]
 
 placeT :: Matrix -> Matrix
-placeT = placePiece tPattern 3 (GridSquare T Falling)
-    where tPattern = [(0, 1), (1, 0), (1, 1), (1, 2)]
+placeT = placePiece tPattern (GridSquare T Falling)
+    where tPattern = [(0, 1), (1, 0), (1, 1), (2, 1)]
 
 placeOrangeL :: Matrix -> Matrix
-placeOrangeL = placePiece lPattern 2 (GridSquare OrangeL Falling)
+placeOrangeL = placePiece lPattern (GridSquare OrangeL Falling)
     where lPattern = [(0, 0), (0, 1), (1, 1), (2, 1)]
 
 placeBlueL :: Matrix -> Matrix
-placeBlueL = placePiece lPattern 2 (GridSquare BlueL Falling)
+placeBlueL = placePiece lPattern (GridSquare BlueL Falling)
     where lPattern = [(0, 0), (0, 1), (1, 0), (2, 0)]
 
 placeRedZ :: Matrix -> Matrix
-placeRedZ = placePiece zPattern 2 (GridSquare RedZ Falling)
+placeRedZ = placePiece zPattern (GridSquare RedZ Falling)
     where zPattern = [(0, 1), (1, 0), (1, 1), (2, 0)]
 
 placeGreenZ :: Matrix -> Matrix
-placeGreenZ = placePiece zPattern 2 (GridSquare GreenZ Falling)
+placeGreenZ = placePiece zPattern (GridSquare GreenZ Falling)
     where zPattern = [(0, 0), (1, 0), (1, 1), (2, 1)]
 
 -- This will change the board depending on what kind of tick it is, if the piece can fall, we make it fall, if not we lock it in place
