@@ -30,7 +30,7 @@ startFallTime = 1.2
 -- $ is a way of changing order of functions, for example: putStrLn (show (1+1)) is the same as printStrLn $ show (1+1), just a way to avoid parenthesis
 -- Lamba functions in haskell are represented by \ x -> (function), so this is calling blank canvas with two arguments
 -- and a function we're writing in line with the 
-runTetris = blankCanvas 3000 { events = ["keydown"] } $ \ context -> gameLoop context 0 0 initialBoard Drop where
+runTetris = blankCanvas 3000 { events = ["keydown"] } $ \ context -> gameLoop context 1 0 initialBoard Drop where
   initialBoard = replicate matrixHeight (replicate matrixWidth (GridSquare None Empty))
 
 -- Game loop function, to take care of handling the main game loop
@@ -39,7 +39,7 @@ gameLoop context level framesSinceDrop boardMatrix gameState = do
   newBoard <- getNewBoard context level framesSinceDrop boardMatrix gameState
   newState <- getNewState context level framesSinceDrop newBoard    gameState
 
-  let newLevel = if gameState == Drop then level else level + level * 0.1
+  let newLevel = if gameState == Drop then level + 0.1 else level
   let newFrames = if newState /= gameState then 0 else framesSinceDrop + 1
 
   send context $ do
@@ -68,7 +68,7 @@ getNewState context level framesSinceDrop boardMatrix gameState
   | gameState == Tick = return $ if null (getFallingPieces boardMatrix) then Drop else Playing
   -- This is from the hard drop, if there's no falling pieces then we have dropped
   | null (getFallingPieces boardMatrix) = return Drop
-  | framesSinceDrop >= floor (40 * startFallTime * ((1/2) ** fromIntegral (floor level))) = return Tick
+  | framesSinceDrop >= floor (40 * startFallTime * ((1/1.58) ** (level - 0.2))) + 3 = return Tick
   | otherwise = return Playing
 
 processInput :: DeviceContext -> Matrix -> IO Matrix 

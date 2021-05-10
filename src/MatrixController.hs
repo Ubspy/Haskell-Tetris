@@ -74,7 +74,7 @@ placeRandomPiece boardMatrix = do
 -- Use mapBoard to place a pattern at the top of the board
 -- I'm really proud of this function, I know to you this is probably simple, but I really think I did a good job here
 placePiece :: [(Int, Int)] -> GridSquare -> Matrix -> Matrix
-placePiece piecePattern squareToPlace boardMatrix = trace (show (getMaxPlacedPiece boardMatrix pieceWidth) ++ ", " ++ show pieceWidth ++ ", " ++ show pieceHeight) mapBoard boardMatrix placeSquare
+placePiece piecePattern squareToPlace boardMatrix = mapBoard boardMatrix placeSquare
     where pieceWidth = maximum [snd square | square <- piecePattern] + 1 -- Add 1 for zero-indexing
           pieceHeight = maximum [fst square | square <- piecePattern] + 1
           xOffset = (matrixWidth - pieceWidth) `div` 2
