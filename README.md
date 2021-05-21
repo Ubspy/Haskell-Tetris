@@ -2,7 +2,7 @@
 This is my final project for EECS 368 at the University of Kansas. The project was to recreate a game using one of the two languages we learned throughout the semester. I chose to recreate the classic game `Tetris` using Haskell.
 
 ## Gameplay Demo
-![Gameplay Demo](tetris-gameplay.mp4)
+![Gameplay Demo](tetris-gameplay.gif)
 
 ## Install
 Assuming you have [GHC](https://www.haskell.org/ghc/) and [stack](https://docs.haskellstack.org/en/stable/README/) installed, all you need to do is clone the repository and install the packages using stack:
